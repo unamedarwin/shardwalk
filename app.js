@@ -30,6 +30,52 @@ const sha256 = (bytes) => nacl.hash(bytes).slice(0, 32);
       ca: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Flag_of_Catalonia.svg"        // Senyera
     };
 
+    // ============================================================
+    // Twemoji SVG assets (used for in-game sprites / icons)
+    // Notes: Twemoji filenames typically omit variation selector-16 (FE0F). 
+    // ============================================================
+    const TWEMOJI_BASE = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/";
+
+    function twemojiUrl(emoji) {
+      // Build a Twemoji SVG filename from codepoints (strip FE0F).
+      const cps = [];
+      for (const ch of emoji) {
+        const cp = ch.codePointAt(0).toString(16);
+        if (cp === "fe0f") continue; // omit variation selector
+        cps.push(cp);
+      }
+      return TWEMOJI_BASE + cps.join("-") + ".svg";
+    }
+
+    // Map texture keys to Twemoji emojis + desired raster size.
+    const SVG_ASSETS = {
+      // Players
+      p_me:    { emoji: "🧙", size: 44 },
+      p_other: { emoji: "🧝", size: 44 },
+
+      // Monsters
+      m_slime:  { emoji: "🦠", size: 36 },
+      m_wolf:   { emoji: "🐺", size: 36 },
+      m_bandit: { emoji: "🥷", size: 36 },
+      m_wisp:   { emoji: "👻", size: 36 },
+
+      // World decor
+      d_tree:   { emoji: "🌲", size: 40 },
+      d_rock:   { emoji: "🪨", size: 40 },
+      d_bush:   { emoji: "🌱", size: 36 },
+      d_ore:    { emoji: "⛏️", size: 36 },
+      d_herb:   { emoji: "🌿", size: 36 },
+      d_bones:  { emoji: "🦴", size: 36 },
+      d_ruins:  { emoji: "🏚️", size: 40 },
+      d_shrine: { emoji: "⛩️", size: 40 },
+
+      // Shared objects
+      o_fire:   { emoji: "🔥", size: 36 },
+      o_sign:   { emoji: "🪧", size: 36 },
+      o_bench:  { emoji: "🛠️", size: 36 }
+    };
+
+
     const I18N = {
       en: {
         ui: { close: "Close", language: "Language" },
@@ -1349,6 +1395,21 @@ const sha256 = (bytes) => nacl.hash(bytes).slice(0, 32);
 
     class Main extends Phaser.Scene {
       constructor(){ super("Main"); }
+
+      preload () {
+        // Enable CORS for CDN-loaded SVGs.
+        this.load.setCORS("anonymous");
+
+        const loadEmojiSvg = (key, emoji, size) => {
+          const url = twemojiUrl(emoji);
+          this.load.svg(key, url, { width: size, height: size });
+        };
+
+        for (const [key, info] of Object.entries(SVG_ASSETS)) {
+          loadEmojiSvg(key, info.emoji, info.size);
+        }
+      }
+
       create(){
         gameScene = this;
 
@@ -1361,28 +1422,31 @@ const sha256 = (bytes) => nacl.hash(bytes).slice(0, 32);
         makeDiamondTexture(this, "t_water", TILE_W, TILE_H, 0x4aa3ff);
         makeDiamondTexture(this, "t_mount", TILE_W, TILE_H, 0x8b6b4f);
 
-        makeRectTexture(this, "p_me",    26, 38, 0xf1c40f);
-        makeRectTexture(this, "p_other", 26, 38, 0x4aa3ff);
+        
+        // SVG sprite fallback (only used if a CDN SVG fails to load).
+        const ensure = (key, fn) => { if (!this.textures.exists(key)) fn(); };
 
-        makeRectTexture(this, "m_slime", 22, 22, 0xff5c5c);
-        makeRectTexture(this, "m_wolf",  22, 22, 0xc2c2c2);
-        makeRectTexture(this, "m_bandit",22, 22, 0xffb703);
-        makeRectTexture(this, "m_wisp",  22, 22, 0xffffff);
+        ensure("p_me",    () => makeRectTexture(this, "p_me",    26, 38, 0xf1c40f));
+        ensure("p_other", () => makeRectTexture(this, "p_other", 26, 38, 0x4aa3ff));
 
-        makeIcon(this, "d_tree",  22, 30, 0x2ecc71);
-        makeIcon(this, "d_rock",  26, 22, 0x95a5a6);
-        makeIcon(this, "d_bush",  22, 22, 0xe67e22);
-        makeIcon(this, "d_ore",   26, 22, 0xadb5bd);
-        makeIcon(this, "d_herb",  22, 22, 0x90be6d);
-        makeIcon(this, "d_bones", 26, 22, 0xf8f9fa);
-        makeIcon(this, "d_ruins", 26, 30, 0x8d99ae);
-        makeIcon(this, "d_shrine",22, 34, 0xffffff);
+        ensure("m_slime",  () => makeRectTexture(this, "m_slime",  22, 22, 0xff5c5c));
+        ensure("m_wolf",   () => makeRectTexture(this, "m_wolf",   22, 22, 0xc2c2c2));
+        ensure("m_bandit", () => makeRectTexture(this, "m_bandit", 22, 22, 0xffb703));
+        ensure("m_wisp",   () => makeRectTexture(this, "m_wisp",   22, 22, 0xffffff));
 
-        makeIcon(this, "o_fire",  26, 26, 0xffd166);
-        makeIcon(this, "o_sign",  26, 26, 0xb08968);
-        makeIcon(this, "o_bench", 26, 26, 0x9b5de5);
+        ensure("d_tree",   () => makeIcon(this, "d_tree",   22, 30, 0x2ecc71));
+        ensure("d_rock",   () => makeIcon(this, "d_rock",   26, 22, 0x95a5a6));
+        ensure("d_bush",   () => makeIcon(this, "d_bush",   22, 22, 0xe67e22));
+        ensure("d_ore",    () => makeIcon(this, "d_ore",    26, 22, 0xadb5bd));
+        ensure("d_herb",   () => makeIcon(this, "d_herb",   22, 22, 0x90be6d));
+        ensure("d_bones",  () => makeIcon(this, "d_bones",  26, 22, 0xf8f9fa));
+        ensure("d_ruins",  () => makeIcon(this, "d_ruins",  26, 30, 0x8d99ae));
+        ensure("d_shrine", () => makeIcon(this, "d_shrine", 22, 34, 0xffffff));
 
-        tileSprites = [];
+        ensure("o_fire",  () => makeIcon(this, "o_fire",  26, 26, 0xffd166));
+        ensure("o_sign",  () => makeIcon(this, "o_sign",  26, 26, 0xb08968));
+        ensure("o_bench", () => makeIcon(this, "o_bench", 26, 26, 0x9b5de5));
+tileSprites = [];
         decorSprites = [];
         for (let i=0; i<VIEW_W*VIEW_H; i++){
           const t0 = this.add.image(0,0,"t_grass").setOrigin(0.5,0);
@@ -2010,7 +2074,7 @@ const sha256 = (bytes) => nacl.hash(bytes).slice(0, 32);
             <li><b>Trystero</b> — MIT</li>
             <li><b>tweetnacl</b> — Ed25519</li>
             <li><b>tweetnacl.hash</b> — SHA-512 (used as hashing)</li>
-            <li><b>Flags</b> — Twemoji via jsDelivr + Senyera via Wikimedia</li>
+            <li><b>Twemoji SVGs</b> — flags + in‑game sprites/icons (loaded via jsDelivr), plus Senyera via Wikimedia</li>
           </ul>
         </div>
         <div class="card" style="margin-top:10px">
@@ -2500,6 +2564,7 @@ const sha256 = (bytes) => nacl.hash(bytes).slice(0, 32);
 
       new Phaser.Game({
         type: Phaser.AUTO,
+        loader: { crossOrigin: "anonymous" },
         parent: "game",
         backgroundColor: "#0e0e10",
         pixelArt: true,
