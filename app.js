@@ -2,8 +2,8 @@ import * as Phaser from "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.
     import nacl from "https://esm.run/tweetnacl";
     import { joinRoom } from "https://esm.run/trystero/torrent";
     import { selfId } from "https://esm.run/trystero";
-import { sha256 } from "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.0/sha256.js";
-
+import * as nobleSha256 from "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.0/esm/sha256.js";
+const sha256 = nobleSha256.sha256;
 // bytesToHex helper (avoid fragile CDN named-exports)
 const bytesToHex = (bytes) => {
   let out = "";
