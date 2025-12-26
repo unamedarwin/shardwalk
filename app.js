@@ -2,14 +2,17 @@ import * as Phaser from "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.
     import nacl from "https://esm.run/tweetnacl";
     import { joinRoom } from "https://esm.run/trystero/torrent";
     import { selfId } from "https://esm.run/trystero";
-import * as nobleSha256 from "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.0/esm/sha256.js";
-const sha256 = nobleSha256.sha256;
 // bytesToHex helper (avoid fragile CDN named-exports)
 const bytesToHex = (bytes) => {
   let out = "";
   for (let i = 0; i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, "0");
   return out;
 };
+
+// sha256 helper implemented via tweetnacl.hash (SHA-512) truncated to 32 bytes
+// This avoids fragile CDN ESM transforms and works in plain browsers on GitHub Pages.
+const sha256 = (bytes) => nacl.hash(bytes).slice(0, 32);
+
 
 
 
@@ -2006,7 +2009,7 @@ const bytesToHex = (bytes) => {
             <li><b>Phaser</b> — MIT</li>
             <li><b>Trystero</b> — MIT</li>
             <li><b>tweetnacl</b> — Ed25519</li>
-            <li><b>@noble/hashes</b> — MIT</li>
+            <li><b>tweetnacl.hash</b> — SHA-512 (used as hashing)</li>
             <li><b>Flags</b> — Twemoji via jsDelivr + Senyera via Wikimedia</li>
           </ul>
         </div>
