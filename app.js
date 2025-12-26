@@ -1,9 +1,17 @@
 import * as Phaser from "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.esm.js";
     import nacl from "https://esm.run/tweetnacl";
-import { sha256 } from "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.0/sha256.js";
-import { bytesToHex } from "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.0/utils.js";
+    import { sha256 } from "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.0/sha256.js";
+import { bytesToHex } from "https://esm.run/@noble/hashes/utils.js";
     import { joinRoom } from "https://esm.run/trystero/torrent";
     import { selfId } from "https://esm.run/trystero";
+
+// bytesToHex helper (avoid fragile CDN named-exports)
+const bytesToHex = (bytes) => {
+  let out = "";
+  for (let i = 0; i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, "0");
+  return out;
+};
+
 
     // ============================================================
     // i18n (6 languages: EN, ZH, HI, ES, FR, CA)
